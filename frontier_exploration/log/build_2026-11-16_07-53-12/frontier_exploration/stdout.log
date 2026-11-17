@@ -1,0 +1,52 @@
+running egg_info
+creating build/frontier_exploration/frontier_exploration.egg-info
+writing build/frontier_exploration/frontier_exploration.egg-info/PKG-INFO
+writing dependency_links to build/frontier_exploration/frontier_exploration.egg-info/dependency_links.txt
+writing entry points to build/frontier_exploration/frontier_exploration.egg-info/entry_points.txt
+writing requirements to build/frontier_exploration/frontier_exploration.egg-info/requires.txt
+writing top-level names to build/frontier_exploration/frontier_exploration.egg-info/top_level.txt
+writing manifest file 'build/frontier_exploration/frontier_exploration.egg-info/SOURCES.txt'
+reading manifest file 'build/frontier_exploration/frontier_exploration.egg-info/SOURCES.txt'
+writing manifest file 'build/frontier_exploration/frontier_exploration.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+copying frontier_exploration/frontier_selector_old.py -> /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+copying frontier_exploration/frontier_selector.py -> /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+copying frontier_exploration/astar_planner_old.py -> /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+copying frontier_exploration/astar_planner.py -> /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+copying frontier_exploration/frontier_controller.py -> /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+copying frontier_exploration/frontier_controller_old.py -> /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+copying frontier_exploration/frontier_detector.py -> /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+copying frontier_exploration/__init__.py -> /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration
+running install
+running install_lib
+creating /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+copying /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration/frontier_selector_old.py -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+copying /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration/frontier_selector.py -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+copying /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration/astar_planner_old.py -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+copying /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration/astar_planner.py -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+copying /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration/frontier_controller.py -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+copying /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration/frontier_controller_old.py -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+copying /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration/frontier_detector.py -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+copying /home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/build/lib/frontier_exploration/__init__.py -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration
+byte-compiling /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration/frontier_selector_old.py to frontier_selector_old.cpython-310.pyc
+byte-compiling /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration/frontier_selector.py to frontier_selector.cpython-310.pyc
+byte-compiling /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration/astar_planner_old.py to astar_planner_old.cpython-310.pyc
+byte-compiling /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration/astar_planner.py to astar_planner.cpython-310.pyc
+byte-compiling /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration/frontier_controller.py to frontier_controller.cpython-310.pyc
+byte-compiling /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration/frontier_controller_old.py to frontier_controller_old.cpython-310.pyc
+byte-compiling /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration/frontier_detector.py to frontier_detector.cpython-310.pyc
+byte-compiling /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration/__init__.py to __init__.cpython-310.pyc
+running install_data
+creating /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/share/ament_index/resource_index/packages
+copying resource/frontier_exploration -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/share/ament_index/resource_index/packages
+copying package.xml -> /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/share/frontier_exploration
+running install_egg_info
+Copying build/frontier_exploration/frontier_exploration.egg-info to /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/python3.10/site-packages/frontier_exploration-0.0.0-py3.10.egg-info
+running install_scripts
+Installing astar_planner script to /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/frontier_exploration
+Installing frontier_controller script to /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/frontier_exploration
+Installing frontier_detector script to /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/frontier_exploration
+Installing frontier_selector script to /home/krish/ardu_ws/src/frontier_exploration/install/frontier_exploration/lib/frontier_exploration
+writing list of installed files to '/home/krish/ardu_ws/src/frontier_exploration/build/frontier_exploration/install.log'
