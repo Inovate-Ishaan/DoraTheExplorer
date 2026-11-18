@@ -91,7 +91,7 @@ def generate_launch_description():
         namespace=LaunchConfiguration("namespace"),
         arguments=[
             "-d",
-            f'{Path(pkg_project_bringup) / "rviz" / "iris_with_lidar.rviz"}',
+            f'{Path(pkg_project_bringup) / "rviz" / "iris_with_mapping.rviz"}',
         ],
         condition=IfCondition(LaunchConfiguration("rviz")),
         remappings=[
