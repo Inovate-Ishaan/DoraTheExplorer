@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <!--
+    Flat ArUco marker, DICT_4X4_50, id 0.
+    Plane is 0.75 m wide in total: the black marker itself is 0.50 m
+    (600 of 900 px) and the rest is the white quiet zone the detector needs.
+    => marker_size for the detector node = 0.50 m
+  -->
+  <model name="aruco_marker">
+    <static>true</static>
+    <link name="link">
+      <visual name="visual">
+        <pose>0 0 0.002 0 0 0</pose>
+        <geometry>
+          <plane>
+            <normal>0 0 1</normal>
+            <size>0.75 0.75</size>
+          </plane>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+          <specular>0 0 0 1</specular>
+          <pbr>
+            <metal>
+              <albedo_map>model://aruco/materials/textures/marker_id0.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
+            </metal>
+          </pbr>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
+

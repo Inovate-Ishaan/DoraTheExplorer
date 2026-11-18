@@ -18,6 +18,8 @@ from rclpy.time import Time
 
 from nav_msgs.msg import Path, Odometry
 from geometry_msgs.msg import TwistStamped
+from std_msgs.msg import Bool
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 from ardupilot_msgs.msg import Status
 from ardupilot_msgs.srv import ArmMotors, ModeSwitch, Takeoff
 
@@ -103,6 +105,9 @@ class FrontierController(Node):
         self.status_received_time = 0.0
 
         self.yaw = 0.0  # yaw of base_link in map
+        # Mission gate: when False the controller stays silent (takeoff
+        # still runs). Defaults to True so it works without a manager.
+        self.drive_enabled = True
 
         self.state = 'WAIT_STATUS' if self.auto_start else 'EXPLORE'
         self.pending = None          # (name, future, start_time)
@@ -121,6 +126,11 @@ class FrontierController(Node):
             Odometry, '/odometry', self.odom_callback, 10)
         self.create_subscription(
             Status, gp('status_topic').value, self.status_callback, 10)
+        self.create_subscription(
+            Bool, '/mission/controller_enable', self.gate_callback,
+            QoSProfile(depth=1,
+                       durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                       reliability=ReliabilityPolicy.RELIABLE))
 
         # ---------------- Publishers ----------------
         self.cmd_pub = self.create_publisher(
@@ -167,6 +177,9 @@ class FrontierController(Node):
     def odom_callback(self, msg):
         self.odom = msg
         self.odom_received_time = time.monotonic()
+
+    def gate_callback(self, msg):
+        self.drive_enabled = bool(msg.data)
 
     def status_callback(self, msg):
         self.status = msg
@@ -473,6 +486,10 @@ class FrontierController(Node):
                 'Vehicle disarmed during exploration. Halting.',
                 throttle_duration_sec=5.0)
             self.state = 'ABORT'
+            return
+
+        # Mission manager has taken over (or is measuring): publish nothing
+        if not self.drive_enabled:
             return
 
         pose = self.get_map_pose()
