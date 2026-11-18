@@ -10,18 +10,23 @@ ros2 daemon stop && ros2 daemon start
 
 
 ### Terminal 1:
-```bash . install/setup.bash
+```bash
+ . install/setup.bash
 __NV_PRIME_RENDER_OFFLOAD=1 \
 __GLX_VENDOR_LIBRARY_NAME=nvidia 
 ```
-```bash export GZ_SIM_RESOURCE_PATH="$HOME/ardu_ws/install/ardupilot_gazebo/share:$HOME/ardu_ws/src/ardupilot_gz/ardupilot_gz_description/models:$GZ_SIM_RESOURCE_PATH"
+```bash
+export GZ_SIM_RESOURCE_PATH="$HOME/ardu_ws/install/ardupilot_gazebo/share:$HOME/ardu_ws/src/ardupilot_gz/ardupilot_gz_description/models:$GZ_SIM_RESOURCE_PATH"
 export SDF_PATH="$GZ_SIM_RESOURCE_PATH"
 ```
-```bash ros2 launch ardupilot_gz_bringup iris_maze.launch.py rviz:=true use_gz_tf:=true
+```bash
+. install/setup.bash
+ros2 launch ardupilot_gz_bringup iris_maze.launch.py rviz:=true use_gz_tf:=true
 ```
 
 ### Terminal 2:
-```bash . install/setup.bash
+```bash
+. install/setup.bash
 ros2 launch frontier_exploration launch_auto_exploration.launch.py
 ```
 
