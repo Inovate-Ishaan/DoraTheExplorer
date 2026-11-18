@@ -1,19 +1,21 @@
-
 import math
 import time
- 
+
 import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
- 
+
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
+
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
+from std_msgs.msg import Bool, Int32
 from visualization_msgs.msg import Marker, MarkerArray
- 
+
 from tf2_ros import Buffer, TransformListener, TransformException
- 
- 
+
+
 class FrontierSelector(Node):
     """
     Picks the nearest frontier, but:
@@ -23,27 +25,27 @@ class FrontierSelector(Node):
       * blacklists a goal once reached, if it takes too long, or if the
         planner reports it unreachable (/unreachable_goal).
     """
- 
+
     def __init__(self):
         super().__init__('frontier_selector')
- 
+
         self.declare_parameter('reach_radius', 0.5)
         self.declare_parameter('blacklist_radius', 0.6)
         self.declare_parameter('blacklist_time', 120.0)
         self.declare_parameter('goal_timeout', 45.0)
         self.declare_parameter('same_goal_radius', 0.6)
- 
+
         # Wall avoidance
         # Frontiers closer than this to an occupied cell are skipped
         # while any wall-free frontier exists.
-        self.declare_parameter('min_wall_clearance', 0.7)
+        self.declare_parameter('min_wall_clearance', 0.5)
         # Clearance is only measured up to this distance (metres).
         self.declare_parameter('clearance_cap', 1.0)
         # Score = distance - weight * clearance. 0 = pure nearest-first.
         self.declare_parameter('clearance_weight', 1.0)
         # How long a goal the planner called unreachable stays excluded.
         self.declare_parameter('unreachable_blacklist_time', 30.0)
- 
+
         self.reach_radius = self.get_parameter('reach_radius').value
         self.blacklist_radius = self.get_parameter(
             'blacklist_radius').value
@@ -59,14 +61,14 @@ class FrontierSelector(Node):
             self.get_parameter('clearance_weight').value)
         self.unreachable_time = float(
             self.get_parameter('unreachable_blacklist_time').value)
- 
+
         self.current = None          # (x, y)
         self.current_since = 0.0
         self.blacklist = []          # (x, y, expiry)
- 
+
         self.map_msg = None
         self.grid = None             # int16 array [height, width]
- 
+
         self.frontier_sub = self.create_subscription(
             MarkerArray, '/frontiers', self.frontier_callback, 10)
         self.map_sub = self.create_subscription(
@@ -78,21 +80,48 @@ class FrontierSelector(Node):
             PoseStamped, '/exploration_goal', 10)
         self.selected_pub = self.create_publisher(
             Marker, '/selected_frontier', 10)
- 
+
+        # How many usable (not blacklisted) frontiers are left. The mission
+        # manager treats 0 for a few seconds as "exploration finished".
+        self.remaining_pub = self.create_publisher(
+            Int32, '/frontier_selector/remaining', 10)
+
+        # Mission gate: while False this node stays silent (the mission
+        # manager is sending its own goals, e.g. "return home").
+        # Defaults to True, so it works standalone without a manager.
+        self.enabled = True
+        gate_qos = QoSProfile(
+            depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=ReliabilityPolicy.RELIABLE)
+        self.gate_sub = self.create_subscription(
+            Bool, '/mission/selector_enable', self.gate_callback, gate_qos)
+
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
- 
+
         self.get_logger().info('Frontier Selector Started')
- 
+
     # --------------------------------------------------
     # Map / clearance
     # --------------------------------------------------
- 
+
     def map_callback(self, msg):
         self.map_msg = msg
         self.grid = np.asarray(msg.data, dtype=np.int16).reshape(
             (msg.info.height, msg.info.width))
- 
+
+    def gate_callback(self, msg):
+        if msg.data and not self.enabled:
+            # Resuming after a pause: forget the old committed goal so its
+            # timeout does not run while we were not selecting.
+            self.current = None
+        self.enabled = bool(msg.data)
+
+    def publish_remaining(self, n):
+        m = Int32()
+        m.data = int(n)
+        self.remaining_pub.publish(m)
+
     def clearance(self, x, y):
         """Distance (m) from (x, y) to the nearest occupied cell,
         capped at clearance_cap. Assumes an axis-aligned map origin
@@ -100,87 +129,90 @@ class FrontierSelector(Node):
         cap, i.e. no penalty."""
         if self.grid is None:
             return self.clearance_cap
- 
+
         info = self.map_msg.info
         res = info.resolution
         cx = int(math.floor((x - info.origin.position.x) / res))
         cy = int(math.floor((y - info.origin.position.y) / res))
         r = int(math.ceil(self.clearance_cap / res))
- 
+
         x0 = max(0, cx - r)
         x1 = min(info.width, cx + r + 1)
         y0 = max(0, cy - r)
         y1 = min(info.height, cy + r + 1)
         if x0 >= x1 or y0 >= y1:
             return self.clearance_cap
- 
+
         idx = np.argwhere(self.grid[y0:y1, x0:x1] >= 65)
         if idx.size == 0:
             return self.clearance_cap
- 
+
         dx = idx[:, 1] + x0 - cx
         dy = idx[:, 0] + y0 - cy
         dist = float(np.sqrt(np.min(dx * dx + dy * dy))) * res
         return min(dist, self.clearance_cap)
- 
+
     # --------------------------------------------------
     # Blacklist
     # --------------------------------------------------
- 
+
     def is_blacklisted(self, x, y, now):
         self.blacklist = [b for b in self.blacklist if b[2] > now]
         return any(math.hypot(x - bx, y - by) < self.blacklist_radius
                    for bx, by, _ in self.blacklist)
- 
+
     def add_blacklist(self, x, y, now, reason, duration=None):
         if duration is None:
             duration = self.blacklist_time
         self.blacklist.append((x, y, now + duration))
         self.get_logger().info(
             f'Blacklisted ({x:.2f}, {y:.2f}): {reason}')
- 
+
     def unreachable_callback(self, msg):
         x = msg.pose.position.x
         y = msg.pose.position.y
         now = time.monotonic()
- 
+
         if not self.is_blacklisted(x, y, now):
             self.add_blacklist(x, y, now, 'planner says unreachable',
                                self.unreachable_time)
- 
+
         # Drop the committed goal if it is the one that failed
         if (self.current is not None
                 and math.hypot(self.current[0] - x,
                                self.current[1] - y)
                 < self.same_goal_radius):
             self.current = None
- 
+
     # --------------------------------------------------
     # Selection
     # --------------------------------------------------
- 
+
     def frontier_callback(self, msg):
+        if not self.enabled:
+            return
         try:
             transform = self.tf_buffer.lookup_transform(
                 'map', 'base_link', Time())
         except TransformException as ex:
             self.get_logger().warning(f'Could not get drone pose: {ex}')
             return
- 
+
         now = time.monotonic()
         drone_x = transform.transform.translation.x
         drone_y = transform.transform.translation.y
- 
+
         frontiers = [
             m for m in msg.markers
             if m.action == Marker.ADD and m.type == Marker.SPHERE
         ]
- 
+
         if not frontiers:
             self.get_logger().info('No frontiers available')
             self.current = None
+            self.publish_remaining(0)
             return
- 
+
         # Retire current goal if reached or timed out
         if self.current is not None:
             cx, cy = self.current
@@ -190,24 +222,26 @@ class FrontierSelector(Node):
             elif now - self.current_since > self.goal_timeout:
                 self.add_blacklist(cx, cy, now, 'timeout')
                 self.current = None
- 
+
         candidates = [
             f for f in frontiers
             if not self.is_blacklisted(
                 f.pose.position.x, f.pose.position.y, now)
         ]
- 
+
+        self.publish_remaining(len(candidates))
+
         if not candidates:
             self.get_logger().info(
                 'All remaining frontiers blacklisted')
             return
- 
+
         # Wall clearance of every candidate
         clear = {
             id(f): self.clearance(f.pose.position.x, f.pose.position.y)
             for f in candidates
         }
- 
+
         # Prefer frontiers away from walls. If every frontier is close
         # to a wall, fall back to all of them so exploration never
         # stalls (the planner will blacklist the unreachable ones).
@@ -220,9 +254,9 @@ class FrontierSelector(Node):
             self.get_logger().info(
                 'All frontiers are close to walls; using them anyway.',
                 throttle_duration_sec=5.0)
- 
+
         best = None
- 
+
         # Keep committed goal if a matching frontier still exists
         if self.current is not None:
             cx, cy = self.current
@@ -235,7 +269,7 @@ class FrontierSelector(Node):
             if matches:
                 best = min(matches, key=lambda f: math.hypot(
                     f.pose.position.x - cx, f.pose.position.y - cy))
- 
+
         # Otherwise pick the best-scoring candidate: near, and open
         if best is None:
             best = min(pool, key=lambda f: (
@@ -243,25 +277,25 @@ class FrontierSelector(Node):
                            f.pose.position.y - drone_y)
                 - self.clearance_weight * clear[id(f)]))
             self.current_since = now
- 
+
         self.current = (best.pose.position.x, best.pose.position.y)
         best_distance = math.hypot(
             self.current[0] - drone_x, self.current[1] - drone_y)
- 
+
         goal = PoseStamped()
         goal.header.stamp = self.get_clock().now().to_msg()
         goal.header.frame_id = 'map'
         goal.pose.position.x = self.current[0]
         goal.pose.position.y = self.current[1]
         goal.pose.position.z = 0.0
- 
+
         yaw = math.atan2(self.current[1] - drone_y,
                          self.current[0] - drone_x)
         goal.pose.orientation.z = math.sin(yaw / 2.0)
         goal.pose.orientation.w = math.cos(yaw / 2.0)
- 
+
         self.goal_pub.publish(goal)
- 
+
         selected = Marker()
         selected.header = goal.header
         selected.ns = 'selected_frontier'
@@ -273,14 +307,14 @@ class FrontierSelector(Node):
         selected.color.r = 1.0
         selected.color.a = 1.0
         self.selected_pub.publish(selected)
- 
+
         self.get_logger().info(
             f'Selected frontier at ({self.current[0]:.2f}, '
             f'{self.current[1]:.2f}), distance = {best_distance:.2f} m, '
             f'wall clearance = {clear[id(best)]:.2f} m',
             throttle_duration_sec=2.0)
- 
- 
+
+
 def main(args=None):
     rclpy.init(args=args)
     node = FrontierSelector()
@@ -290,8 +324,7 @@ def main(args=None):
         pass
     node.destroy_node()
     rclpy.shutdown()
- 
- 
+
+
 if __name__ == '__main__':
     main()
- 

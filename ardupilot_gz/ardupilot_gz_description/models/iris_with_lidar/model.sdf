@@ -305,6 +305,68 @@
       </axis>
     </joint>
 
+    <!--
+      Downward-facing camera for ArUco precision landing.
+      Defined directly in this model (not through the lidar include),
+      so it is always present whichever lidar variant is used.
+
+      The link is pitched +90 deg about Y, so the camera's +X (viewing
+      axis) points straight down. Image orientation: top = drone front,
+      right = drone right.
+      Pose is relative to base_link (x fwd, y left, z up): centred under
+      the body. Adjust z if the body or legs show up in the image.
+    -->
+    <link name="camera_link">
+      <pose relative_to="base_link">0 0 -0.07 0 1.5708 0</pose>
+      <inertial>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>1e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1e-6</izz>
+        </inertia>
+      </inertial>
+      <visual name="camera_visual">
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="downward_camera" type="camera">
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <update_rate>20</update_rate>
+        <topic>downward_camera/image_raw</topic>
+        <camera_info_topic>downward_camera/camera_info</camera_info_topic>
+        <gz_frame_id>camera_link</gz_frame_id>
+        <camera>
+          <horizontal_fov>1.396</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>20</far>
+          </clip>
+        </camera>
+      </sensor>
+    </link>
+
+    <joint name="camera_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>camera_link</child>
+    </joint>
+
   </model>
 
 </sdf>
